@@ -1,0 +1,147 @@
+---
+title: "Mtcars MPG Analysis"
+author: "Author: James Lee" 
+date: "May 07, 2018"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive Summary
+
+Analysis suggests that while transmission initially seemed significant as part of 3 variables, weight, horsepower and transmission, that seem to have significance in explaining miles per gallon, taking out outliers that had very high leverages show that the outliers may have skewewd our model quiet a bit, three of which having manual transmissions. Two of the outliers had very high mpg, while the third, Maserati Bora, had low mpg but had high weight and horsepower, which can reduce the mpg. So it may have had a RELATIVELY high mpg given that we removed the linear effects of weight and horsepower.After removing these outliers, we see that transmission may no longer be significant after removing the linear effects of weight and horsepower. Therefore, we conclude that there is no strong evidence to suggest transmission is statistically significant in explaining
+mpg after having removed the linear effects of weigth and horsepower. on the other hand there is a strong reason to beleive that weight and horsepower have strong correlation. 
+
+##Exploratory Analysis
+
+Before I begin the analysis, I will first look at the details of the data and plot miles per gallon box plot, split by transmission. 
+```{r cars}
+?mtcars 
+boxplot(mpg~am, data=mtcars, main = "Car Mileage by Transmission", xlab = "0 = automatic, 1 = manual", ylab= "Miles Per Gallon")
+```
+
+We see that manual cleary has a lot more miles per gallon in the picture. We will test significance using a linear model. Another point to note is that the data is tricky in a way that manual is 1 and automatic is 0, which was contrary to what I would have thought. 
+
+
+## Linear Regression Exploratory Analysis 
+
+We will first fit just mpg vs transmission as a factor, we will later add more values. 
+
+```{r pressure}
+fit <- lm(mpg~factor(am), mtcars)
+```
+
+Looking at the summary, using factor automatic as a base we see that manual's slope coefficient is clearly statistically significant with a very low p value. 
+
+```{r pressure}
+summary(fit)
+```
+
+## Model Selection Using Nested Model Testing
+
+we might be leaving bias into our coefficient by not fitting other variables that may be relevant. First i will fit all the variables to explore how they interact with the model.
+
+```{r pressure}
+fit.all <- lm(mpg~+disp+hp+drat+wt+qsec+factor(vs)+factor(am)+factor(gear)+factor(carb)+factor(cyl), mtcars)
+summary(fit.all)
+```
+
+Looks like horsepower and weight are closest to being significant, we will try out one variable at a time to try to remove bias from the transmission regressor as much as possible without overfitting.
+
+```{r pressure}
+fit.hp <- lm(mpg~hp+factor(am),mtcars)
+summary(fit.hp)
+
+anova(fit,fit.hp)
+```
+Summary and anova both show p-values that suggest including hp might be statistically significant. 
+
+We add weight
+```{r pressure}
+fit.hp.wt <- lm(mpg~hp+wt+factor(am),mtcars)
+summary(fit.hp.wt)
+anova(fit.hp,fit.hp.wt)
+```
+Summary and anova both show p-values that suggest including weight might be statistically significant. 
+
+
+We will stop here to not make the documentation too long. However, I want to mention that I tried every other variable and none of them were statistically significant using anova and summary p-values.
+
+```{r eval=FALSE}
+##We add displacement
+fit.hp.wt.disp <- lm(mpg~hp+wt+disp+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.disp)
+
+##displacement p-value suggests it might not be significant, we will try everything to make sure we are not excluding any significant variables
+fit.hp.wt.drat <- lm(mpg~hp+wt+drat+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.drat)
+
+fit.hp.wt.qsec <- lm(mpg~hp+wt+qsec+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.qsec)
+
+fit.hp.wt.vs <- lm(mpg~hp+wt+factor(vs)+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.vs)
+
+fit.hp.wt.gear <- lm(mpg~hp+wt+factor(gear)+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.gear)
+
+fit.hp.wt.carb <- lm(mpg~hp+wt+factor(carb)+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt,fit.hp.wt.carb)
+```
+
+
+So our final model is therefore
+fit.hp.wt <- lm(mpg~hp+wt+factor(am),mtcars)
+
+## Diagnostics
+We will look at the standard diagnostics plots to check that our model is good.
+
+```{r pressure}
+par(mfrow=c(2,2)) 
+plot(fit.hp.wt)
+```
+Looks likew we might have some outliers, chrysler, toyota and fiat. However, overall the residuals show no signifcant pattern. Residuals that are high in value suggest that we might have a right skewed data, as in we have outliers that are showing very high mpg than our model would suggest. We confirm this in a normal Q-Q plot which shows chracteristics of a right-skewness. Looking at cook's distance, we don't see any points that are very high in leverage. Overall, we have a fairly good fit although there is some concerns of right skewness. 
+
+
+##Diagnostics for Outliers
+We test for outliers to follow up on our concerns.
+```{r pressure}
+hatvalues(fit.hp.wt)[order(-hatvalues(fit.hp.wt))]
+```
+Looks like Maserati bora might have a relatively strong potential for leverage.
+
+
+We will also look at dfbetas for each of our slopes
+```{r pressure}
+dfbetas(fit.hp.wt)[,2][which.max(abs(dfbetas(fit.hp.wt)[,2]))]
+dfbetas(fit.hp.wt)[,3][which.max(abs(dfbetas(fit.hp.wt)[,3]))]
+dfbetas(fit.hp.wt)[,4][which.max(abs(dfbetas(fit.hp.wt)[,4]))]
+```
+Getting max of dfbetas for hp, looks like Maserati Bora has a fairly high dfbetas value at .58.
+Getting max of dfbetas for wt, looks like Chrysler Imperial has a fairly high dfbetas value at .58.
+Getting max of dfbetas for transmission, looks like Chrysler Imperial has a fairly high dfbetas value at .58.
+
+The high dfbetas are concerning and it might be helpful to get rid of the outlier's we identified and fit a new model, Chrysler Imperial, Maserati Bora. To be more careful, we will also remove Fiat 128 and Toyota Corolla. Next, we will fit our new model. 
+
+```{r pressure}
+drop.outliers<- c('Chrysler Imperial','Maserati Bora','Fiat 128' ,'Toyota Corolla')
+mtcars2 <- mtcars[ !(rownames(mtcars) %in% drop.outliers), ]
+fit.hp.wt2 <- lm(mpg~hp+wt+factor(am),mtcars2)
+summary(fit.hp.wt2)
+```
+
+Interestingly our new fit suggests that transmission is no longer significant, it might have been that the outliers were exercising heavy leverage by having a high mpg as manual vehicles, we check this in our original data.
+
+```{r pressure}
+mtcars[rownames(mtcars) %in% drop.outliers,]
+```
+We see that 3 of the outliers we dropped were manual cars. It is very possible that Fiat and Corrolla were making transmission variable significant by themselves. Maserati Bora's mpg however is very small but it has a very high horsepower and weight, which reduces the mpg. So, it might be a case that it has a good mpg relative to its high weight and horsepower.
+
+##Conclusion (Executive Summary Repeated)
+Analysis suggests that while transmission initially seemed significant as part of 3 variables, weight, horsepower and transmission, that seem to have significance in explaining miles per gallon, taking out outliers that had very high leverages show that the outliers may have skewewd our model quiet a bit, three of which having manual transmissions. Two of the outliers had very high mpg, while the third, Maserati Bora, had low mpg but had high weight and horsepower, which can reduce the mpg. So it may have had a RELATIVELY high mpg given that we removed the linear effects of weight and horsepower.After removing these outliers, we see that transmission may no longer be significant after removing the linear effects of weight and horsepower. Therefore, we conclude that there is no strong evidence to suggest transmission is statistically significant in explaining
+mpg after having removed the linear effects of weigth and horsepower. on the other hand there is a strong reason to beleive that weight and horsepower have strong correlation. 
+
