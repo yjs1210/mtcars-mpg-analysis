@@ -6,11 +6,9 @@ fig_height: 4
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-A few weeks ago, I took an online course in Regression Models. Part of the course's assignment was to grade other classmates' work. It struck me that either I was completely off the rails or all five other classmates whose papers I graded missed the whole point of the assignment. I'm quite convinced that it's the latter.
-
 Simpson's Paradox is a phenomenon where you observe a statistical significance in a predictor that later disappears or sometimes exhibits different directional influence once you remove the explanatory effects of other significant predictors.
 
-We will walk through an example using the classroom assignment. It tasked the students to identify whether transmission was significant in explaining cars' miles per gallon.
+We will walk through an example using the classroom assignment that I did in Regression Models course. It tasked the students to identify whether transmission was significant in explaining cars' miles per gallon.
 
 While I am no expert in cars, transmission's effect on MPG has been a hotly debated topic for some time, but in a similar vein as how changing your oil every 3000 miles is an antiquated advice, advancements in technology has allowed the manufacturers to build automated cars that have virtually no differences in MPG than the manual cars. An intuition already tell us that transmission should have little to no effect in explaining MPG in our dataset.
 
