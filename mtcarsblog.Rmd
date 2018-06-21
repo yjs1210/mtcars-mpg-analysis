@@ -1,6 +1,9 @@
 ---
 fig_width: 6 
 fig_height: 4 
+output:
+  md_document:
+    variant: markdown_github
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
