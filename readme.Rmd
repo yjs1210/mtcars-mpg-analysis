@@ -1,0 +1,83 @@
+---
+fig_width: 6 
+fig_height: 4 
+output:
+  md_document:
+    variant: markdown_github
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Simpson's Paradox is a phenomenon where you observe a statistical significance in a predictor that later disappears or sometimes exhibits different directional influence once you remove the explanatory effects of other significant predictors.
+
+We will walk through an example using the classroom assignment that I did in Regression Models course. It tasked the students to identify whether transmission was significant in explaining cars' miles per gallon.
+
+While I am no expert in cars, transmission's effect on MPG has been a hotly debated topic for some time, but in a similar vein as how changing your oil every 3000 miles is an antiquated advice, advancements in technology has allowed the manufacturers to build automated cars that have virtually no differences in MPG than the manual cars. An intuition already tell us that transmission should have little to no effect in explaining MPG in our dataset.
+
+We use the proverbial mtcars dataset for this analysis.
+
+```{r explore, echo=FALSE}
+boxplot(mpg~am, data=mtcars, main = "Car MPG by Transmission", xlab = "0 = automatic, 1 = manual", ylab= "Miles Per Gallon")
+```
+
+As you can see, manual cars are clearly winning out in the MPG battle, and a simple regression confirms this observation. This is where most people stopped. 
+
+```{r fit, echo=FALSE}
+fit <- lm(mpg~factor(am), mtcars)
+summary(fit)$coeff
+```
+
+To fully understand this question, one must ask what else explains car's MPG? Horsepower? Weight? Intuitively, these are some obvious predictors that should be included in the model. We will let the data tell us whether we are right.
+
+```{r linearplot, echo=FALSE,include=FALSE}
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r linearplot2, echo=FALSE}
+p1<-ggplot(data=mtcars, aes(x=wt, y=mpg, color=factor(am))) +
+  geom_line()+
+  geom_point()
+p2<-ggplot(data=mtcars, aes(x=hp, y=mpg, color=factor(am))) +
+  geom_line()+
+  geom_point()
+grid.arrange(p1, p2, nrow = 1)
+
+
+```
+
+
+We can see that mpg and hp both have significant linear effects in explaining mpg.
+Next, we do a nested model testing to see if it's justifiable to add these two predictors into our model. 
+
+```{r fitallanova, echo=FALSE}
+fit.hp <- lm(mpg~hp+factor(am),mtcars)
+fit.hp.wt <- lm(mpg~hp+wt+factor(am),mtcars)
+anova(fit,fit.hp,fit.hp.wt)
+
+```
+
+Nested model selection suggests including hp and wt are both statistically significant. 
+Let's see how transmission is faring now.
+
+
+```{r summ, echo=FALSE}
+options(scipen=999)
+summary(fit.hp.wt)
+
+```
+
+We see that transmission is no longer significant in our dataset.
+There still seem to be some group effect in that our y-intercept for transmission = 1 is still higher than the other.
+However, as far as the mtcars dataset is concerned, it is erroneous to conclude that transmission has a linear effect on mpg. 
+
+
+
+
+
+
+
+
+
+
